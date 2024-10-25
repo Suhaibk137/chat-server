@@ -2,9 +2,22 @@ const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
 const path = require('path');
+const cors = require('cors'); // Import the CORS module
 
-// Increase maximum payload size for file uploads
+// Replace with your actual client domain
+const CLIENT_ORIGIN = 'https://chat-client-nu-six.vercel.app';
+
+// Enable CORS for Express routes
+app.use(cors({ origin: CLIENT_ORIGIN }));
+
+// Increase maximum payload size for file uploads and configure CORS for Socket.IO
 const io = require('socket.io')(http, {
+  cors: {
+    origin: CLIENT_ORIGIN,
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type'],
+    credentials: true,
+  },
   maxHttpBufferSize: 1e8, // 100 MB
 });
 
@@ -35,6 +48,9 @@ io.on('connection', (socket) => {
 
     // Broadcast message to other clients
     socket.broadcast.emit('chat message', msgData);
+
+    // Send the message back to the sender with the assigned ID
+    socket.emit('chat message', msgData);
 
     // Schedule message deletion
     setTimeout(() => {
